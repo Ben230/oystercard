@@ -19,26 +19,32 @@ describe Oystercard do
     end
   end
 
-  context '#deduct' do
-    it 'deducts the amount from hte balance' do
-      expect { subject.deduct 1 }.to change { subject.balance }.by -1
-    end
-  end
-
   context '#in_journey?' do
     it 'is intially not in a journey' do
       expect(subject).not_to be_in_journey
     end
-    
+
     it 'touching in initiates a journey' do
+      subject.top_up(10)
       subject.touch_in
       expect(subject).to be_in_journey
     end
 
     it 'touching out ends a journey' do
+      subject.top_up(10)
       subject.touch_in
       subject.touch_out
       expect(subject).not_to be_in_journey
+    end
+
+    it 'raises error when balance is less than £1' do
+      expect { subject.touch_in }.to raise_error 'balance is less than £1'
+    end
+
+    it 'reduces balance by the minimum fare (£1) when touching out' do
+      subject.top_up(10)
+      subject.touch_in
+      expect { subject.touch_out }.to change { subject.balance }.by -(Oystercard::MINIMUM_FARE)
     end
   end
 end
