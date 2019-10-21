@@ -18,4 +18,27 @@ describe Oystercard do
       expect{ subject.top_up(1) }.to raise_error "max balance of #{max_balance} reached"
     end
   end
+
+  context '#deduct' do
+    it 'deducts the amount from hte balance' do
+      expect { subject.deduct 1 }.to change { subject.balance }.by -1
+    end
+  end
+
+  context '#in_journey?' do
+    it 'is intially not in a journey' do
+      expect(subject).not_to be_in_journey
+    end
+    
+    it 'touching in initiates a journey' do
+      subject.touch_in
+      expect(subject).to be_in_journey
+    end
+
+    it 'touching out ends a journey' do
+      subject.touch_in
+      subject.touch_out
+      expect(subject).not_to be_in_journey
+    end
+  end
 end
