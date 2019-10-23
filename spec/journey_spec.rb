@@ -1,49 +1,110 @@
 require 'journey'
-require 'oystercard'
 
 describe Journey do
-  let(:oystercard) { Oystercard.new }
+  let(:oystercard) { double(:oystercard) }
   let(:entry_station) { double(:station) }
   let(:exit_station) { double(:station) }
 
-  it 'is intially not in a journey' do
-    expect(subject).not_to be_in_journey
+  context 'initially' do
+    it 'is intially not in a journey' do
+      expect(subject).not_to be_in_journey
+    end
+
+    it 'initializes with no entry stations' do
+      expect(subject.journies[:entry_stations]).to be_empty
+    end
+
+    it 'initializes with no exit stations' do
+      expect(subject.journies[:exit_stations]).to be_empty
+    end
   end
 
-  it 'initializes with no journies' do
-    expect(subject.journies).to be_empty
+  context 'after touching in' do
+    before { allow(oystercard).to receive(:touch_in).and_return subject.start_journey(entry_station) }
+
+    it 'initiates a journey' do
+      expect(subject).to be_in_journey
+    end
+
+    it 'remembers the entry station' do
+      expect(subject.journies[:entry_stations][0]).to eq entry_station
+    end
+
+    it 'returns a penalty fare for no end station' do
+      expect(subject.fare).to eq Journey::PENTALTY_FARE
+    end
   end
 
-  it 'touching in and out creates 1 journey (an entry coupled with an exit station)' do
-    oystercard.top_up(10)
-    oystercard.touch_in(entry_station)
-    oystercard.touch_out(exit_station)
-    expect(subject.journies.length).to eq 2
+  context 'after exclusively touching out' do
+    before { allow(oystercard).to receive(:touch_out).and_return subject.end_journey(exit_station) }
+
+    it 'returns a penalty fare' do
+      expect(subject.fare).to eq Journey::PENTALTY_FARE
+    end
+
+    it 'has equal entry stations to exit stations' do
+      subject.fare
+      expect(subject.journies[:entry_stations][0]).to eq 'No entry station recorded'
+    end
   end
 
-  it 'touching in initiates a journey' do
-    subject.top_up(10)
-    subject.touch_in(entry_station)
-    expect(journey).to be_in_journey
+  context 'after touching in and out' do
+    before do
+      allow(oystercard).to receive(:touch_in).and_return subject.start_journey(entry_station)
+      allow(oystercard).to receive(:touch_out).and_return subject.end_journey(exit_station)
+    end
+
+    it 'creates 1 entry station' do
+      expect(subject.journies[:entry_stations].count).to eq 1
+    end
+
+    it 'creates 1 exit station' do
+      expect(subject.journies[:exit_stations].count).to eq 1
+    end
+
+    it 'ends a journey' do
+      expect(subject).not_to be_in_journey
+    end
+
+    it 'remembers exit station' do
+      expect(subject.journies[:exit_stations][0]).to eq exit_station
+    end
+
+    it 'returns minimum fare' do
+      expect(subject.fare).to eq Oystercard::MINIMUM_FARE
+    end
+
+    it 'returns a penalty fare if no end station, after a completed journey case' do
+      allow(oystercard).to receive(:touch_in).and_return subject.start_journey(entry_station)
+      expect(subject.fare).to eq Journey::PENTALTY_FARE
+    end
+
+    it 'touching in initiates a journey, after a completed journey case' do
+      allow(oystercard).to receive(:touch_in).and_return subject.start_journey(entry_station)
+      expect(subject).to be_in_journey
+    end
   end
 
-  it 'remembers the entry station' do
-    subject.top_up(10)
-    subject.touch_in(entry_station)
-    expect(subject.journies[:entry_station]).to eq entry_station
+  context 'after touching in twice' do
+    before do
+      allow(oystercard).to receive(:touch_in).and_return subject.start_journey(entry_station)
+      allow(oystercard).to receive(:touch_in).and_return subject.start_journey(entry_station)
+    end
+
+    it 'returns a penalty fare' do
+      expect(subject.fare).to eq Journey::PENTALTY_FARE
+    end
+
+    it 'fills in the empty exit station' do
+      subject.fare
+      expect(subject.journies[:exit_stations][0]).to eq 'No exit station recorded'
+    end
+
+    it 'touches out charges the minimum fare' do
+      subject.fare
+      allow(oystercard).to receive(:touch_out).and_return subject.end_journey(exit_station)
+      expect(subject.fare).to eq Oystercard::MINIMUM_FARE
+    end
   end
 
-  it 'touching out ends a journey' do
-    subject.top_up(10)
-    subject.touch_in(entry_station)
-    subject.touch_out(exit_station)
-    expect(subject).not_to be_in_journey
-  end
-
-  it 'remembers exit station' do
-    subject.top_up(10)
-    subject.touch_in(entry_station)
-    subject.touch_out(exit_station)
-    expect(subject.journies[:exit_station]).to eq exit_station
-  end
 end

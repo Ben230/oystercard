@@ -1,5 +1,4 @@
 require 'oystercard'
-require 'journey'
 
 describe Oystercard do
   let(:entry_station) { double(:station) }
@@ -33,6 +32,12 @@ describe Oystercard do
       subject.top_up(10)
       subject.touch_in(entry_station)
       expect { subject.touch_out(exit_station) }.to change { subject.balance }.by -(Oystercard::MINIMUM_FARE)
+    end
+  end
+
+  context '#calculate_fare' do
+    it 'calulates £1 for fares in zone 1 only' do
+      
     end
   end
 end

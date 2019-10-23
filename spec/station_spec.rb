@@ -4,7 +4,7 @@ describe Station do
   subject { described_class.new("Oldstreet", 1) }
 
   it 'knows its name' do
-    expect(subject.name).to eq 'Oldstreet'
+    expect(subject.name).to eq "Oldstreet"
   end
 
   it 'knows its zone' do
